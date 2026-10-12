@@ -1,4 +1,5 @@
-from scapy.layers.inet import IP, TCP, ICMP
+from scapy.layers.inet import IP, TCP, ICMP, UDP
+from scapy.layers.dns import DNS, DNSQR
 from scapy.sendrecv import sr
 
 def syn_scan(host, ports):
@@ -81,4 +82,55 @@ def ack_scan(host, ports):
 
     return results
 
+def dns_scan(host, domain):
+    # Send DNS query to ask for IPv4 address
+    answered, unanswered = sr(
+        IP(dst = host)/
+        UDP(dport = 53)/
+        DNS(rd=1, qd=DNSQR(qname=domain, qtype="A")),
+        timeout = 2,
+        verbose = False
+    )
 
+    # Create results lists
+    results = []
+
+    # Process answered packets
+    if answered:
+        for (sent,received) in answered:
+            if received.haslayer(DNS) and int(received[DNS].qr) == 1:
+                dns = received[DNS]
+
+                results.append({
+                    "host" : host,
+                    "domain" : domain,
+                    "protocol" : "DNS",
+                    "scan" : "DNS",
+                    "status" : "responded",
+                    "response code" : int(dns.rcode),
+                    "answer count" : int(dns.ancount),
+                })
+            else:
+                results.append({
+                    "host": host,
+                    "domain": domain,
+                    "protocol": "DNS",
+                    "scan": "DNS",
+                    "status": "unexpected_response",
+                    "response_code": None,
+                    "answer_count": 0
+                })
+
+    # Process unanswered packets
+    else:
+        results.append({
+            "host": host,
+            "domain": domain,
+            "protocol": "DNS",
+            "scan": "DNS",
+            "status": "no_response",
+            "response_code": None,
+            "answer_count": 0
+        })
+
+    return results
