@@ -2,7 +2,12 @@ from scapy.layers.inet import IP, TCP, ICMP, UDP
 from scapy.layers.dns import DNS, DNSQR
 from scapy.sendrecv import sr
 
-def syn_scan(host, ports):
+from .scope import validate_target, validate_ports
+
+def syn_scan(host, ports, allowed_targets = None, max_ports = 100):
+    host = validate_target(host, allowed_targets)
+    ports = validate_ports(ports, max_ports)
+
     # Send SYN packets
     answered, unanswered = sr(IP(dst = host)/TCP(dport = ports, flags = "S"), timeout = 2, verbose = False)
 
@@ -26,7 +31,10 @@ def syn_scan(host, ports):
 
     return results
 
-def xmas_scan(host, ports):
+def xmas_scan(host, ports, allowed_targets = None, max_ports = 100):
+    host = validate_target(host, allowed_targets)
+    ports = validate_ports(ports, max_ports)
+
     # Send XMAS packets
     answered, unanswered = sr(IP(dst = host)/TCP(dport = ports, flags = "FPU"), timeout = 2, verbose = False)
 
@@ -54,7 +62,10 @@ def xmas_scan(host, ports):
 
     return results
 
-def ack_scan(host, ports):
+def ack_scan(host, ports, allowed_targets = None, max_ports = 100):
+    host = validate_target(host, allowed_targets)
+    ports = validate_ports(ports, max_ports)
+
     # Send ACK packets
     answered, unanswered = sr(IP(dst = host)/TCP(dport = ports, flags = "A"), timeout = 2, verbose = False)
 
@@ -82,7 +93,9 @@ def ack_scan(host, ports):
 
     return results
 
-def dns_scan(host, domain):
+def dns_scan(host, domain, allowed_targets = None):
+    host = validate_target(host, allowed_targets)
+
     # Send DNS query to ask for IPv4 address
     answered, unanswered = sr(
         IP(dst = host)/
