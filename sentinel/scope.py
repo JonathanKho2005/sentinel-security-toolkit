@@ -35,3 +35,32 @@ def validate_target(host, allowed_targets = None):
         raise PermissionError(f"Target {host} is outside the permission scan scope.")
 
     return str(address)
+
+def validate_ports(ports, max_ports = 100):
+    # Check if ports contains a collection of ports instead of individual characters
+    if isinstance(ports, (str,bytes)):
+        raise ValueError("Port must be a collection of integers.")
+
+    # Check if max_port is a positive integer, excluding booleans
+    if not isinstance(max_ports, int) or isinstance(max_ports, bool) or max_ports < 1:
+        raise ValueError("Max ports must be a positive integer.")
+
+    try:
+        port_list = list(ports)
+    except TypeError as exc:
+        raise ValueError("Ports must be iterable of integers.") from exc
+
+    if not port_list:
+        raise ValueError("At least one port must be supplied.")
+
+    for port in port_list:
+        if (not isinstance(port, int) or isinstance(port, bool) or not 1 <= port <= 65535):
+            raise ValueError(f"Invalid port : {port}. Port must be an integer between 1 and 65535.")
+
+    # Remove duplicates while maintaining the original order.
+    port_list = list(dict.fromkeys(port_list))
+
+    if len(port_list) > max_ports:
+        raise ValueError(f"Too many ports. The maximum allowed is {max_ports} ports.")
+
+    return port_list
