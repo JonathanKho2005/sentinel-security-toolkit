@@ -120,8 +120,8 @@ def dns_scan(host, domain, allowed_targets = None):
                     "protocol" : "DNS",
                     "scan" : "DNS",
                     "status" : "responded",
-                    "response code" : int(dns.rcode),
-                    "answer count" : int(dns.ancount),
+                    "response_code": int(dns.rcode),
+                    "answer_count": int(dns.ancount),
                 })
             else:
                 results.append({
