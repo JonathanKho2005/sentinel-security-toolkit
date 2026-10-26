@@ -3,7 +3,7 @@ import json
 import sys
 
 from sentinel.network import scanner
-
+from sentinel.logging_config import configure_logging
 
 def parse_ports(value):
     # Convert comma-separated port numbers into a list of integers.
@@ -103,7 +103,16 @@ def main(argv=None):
     parser = build_parser()
     args = parser.parse_args(argv)
 
+    logger = configure_logging()
+
+    logger.info(
+        "Scan requested: type=%s target=%s",
+        args.scan_type,
+        args.host,
+    )
+
     try:
+        # Select and execute the appropriate scanner
         if args.scan_type == "syn":
             results = scanner.syn_scan(
                 args.host,
@@ -135,14 +144,30 @@ def main(argv=None):
         else:
             parser.error("Unsupported scan type.")
 
-        # Print the results as readable JSON.
+        # Log successful completion before printing the results
+        logger.info(
+            "Scan completed: type=%s target=%s results=%d",
+            args.scan_type,
+            args.host,
+            len(results),
+        )
+
+        # Print results as readable JSON
         print(json.dumps(results, indent=2, default=str))
         return 0
 
     except (ValueError, PermissionError) as exc:
+        # Record failure in the log file
+        logger.error(
+            "Scan failed: type=%s target=%s error=%s",
+            args.scan_type,
+            args.host,
+            exc,
+        )
+
+        # Show the error to the user in Terminal
         print(f"Error: {exc}", file=sys.stderr)
         return 1
-
 
 if __name__ == "__main__":
     raise SystemExit(main())
