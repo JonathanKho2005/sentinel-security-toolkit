@@ -1,6 +1,10 @@
 import json
 import pytest
 import argparse
+import csv
+import json
+from unittest.mock import Mock
+
 
 from sentinel import cli
 
@@ -209,3 +213,73 @@ def test_cli_error_rejects_malformed_port_argument():
         ])
 
     assert exc_info.value.code == 2
+
+# CLI reporting integration
+@pytest.mark.parametrize(
+    "extension",
+    [".json", ".csv"],
+)
+def test_cli_saves_report(
+    monkeypatch, tmp_path, extension
+):
+    output_path = tmp_path / f"scan{extension}"
+
+    # Prevent this test from creating a real application log.
+    fake_logger = Mock()
+    monkeypatch.setattr(
+        cli,
+        "configure_logging",
+        lambda: fake_logger,
+    )
+
+    # Mock scanner output.
+    def fake_scan(host, ports, allowed_targets=None):
+        return [
+            {
+                "port": 80,
+                "protocol": "TCP",
+                "scan": "SYN",
+                "status": "open",
+            }
+        ]
+
+    monkeypatch.setattr(
+        cli.scanner,
+        "syn_scan",
+        fake_scan,
+    )
+
+    exit_code = cli.main([
+        "syn",
+        "--host", "127.0.0.1",
+        "--ports", "80",
+        "--output", str(output_path),
+    ])
+
+    assert exit_code == 0
+    assert output_path.exists()
+
+    # Verify the saved JSON report.
+    if extension == ".json":
+        with output_path.open(encoding="utf-8") as file:
+            results = json.load(file)
+
+        assert results[0]["status"] == "open"
+
+    # Verify the saved CSV report.
+    elif extension == ".csv":
+        with output_path.open(
+            newline="",
+            encoding="utf-8",
+        ) as file:
+            results = list(csv.DictReader(file))
+
+        assert results[0]["status"] == "open"
+
+    fake_logger.info.assert_any_call(
+        "Report saved: path=%s format=%s records=%d",
+        output_path,
+        extension,
+        1,
+    )
+
