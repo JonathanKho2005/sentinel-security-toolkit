@@ -151,4 +151,5 @@ def test_cli_logs_scan_failure(
     content = read_log(logger, log_path)
 
     assert "Scan requested: type=syn target=127.0.0.1" in content
-    assert "Scan failed: type=syn target=127.0.0.1" in content
+    assert "Operation failed: type=syn target=127.0.0.1" in content
+
