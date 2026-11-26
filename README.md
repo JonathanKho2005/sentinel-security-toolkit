@@ -1,4 +1,4 @@
-# Sentinel — Python Network Reconnaissance Toolkit
+# Sentinel — Security Toolkit
 
 Sentinel is a Python-based network reconnaissance toolkit built with [Scapy](https://scapy.net/). It provides a command-line interface for running basic TCP SYN, ACK and XMAS scans, alongside a UDP-based DNS query. Scan results can be displayed as JSON or exported to JSON and CSV files.
 
